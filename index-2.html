@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#16302B">
+<title>مصروفاتي اليومية</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#16302B;
+    --ink-soft:#4C625D;
+    --paper:#EDF1EF;
+    --card:#FFFFFF;
+    --line:#D5DDDA;
+    --accent:#1B7F5C;
+    --accent-dark:#12614595;
+    --danger:#B3392F;
+    --radius-lg:18px;
+    --radius-sm:10px;
+    --font:"IBM Plex Sans Arabic","Segoe UI",Tahoma,"Noto Sans Arabic",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:var(--font);
+    background:var(--paper);
+    color:var(--ink);
+    line-height:1.6;
+    min-height:100vh;
+    padding-bottom:90px;
+  }
+  button,input,select{font:inherit;color:inherit}
+  button{cursor:pointer}
+  :focus-visible{outline:3px solid #F2B84B;outline-offset:2px}
+  .wrap{max-width:640px;margin:0 auto;padding:0 16px}
+
+  /* ---------- الرأس والملخص ---------- */
+  .top{background:var(--ink);color:#fff;padding:22px 0 90px}
+  .top h1{font-size:1.35rem;font-weight:600}
+  .top p{color:#A9C2BB;font-size:.9rem}
+  .top-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px}
+  .today-box{justify-self:end}
+  .avatar-box{display:flex;flex-direction:column;align-items:center;gap:2px}
+  .avatar{
+    width:68px;height:68px;border-radius:50%;padding:0;overflow:hidden;
+    border:2px solid #A9C2BB;background:#2A4A43;color:#fff;
+    font-size:1.7rem;font-weight:600;display:grid;place-items:center;
+  }
+  .avatar img{width:100%;height:100%;object-fit:cover}
+  .avatar:hover{border-color:#fff}
+  .avatar-remove{background:none;border:0;color:#A9C2BB;font-size:.72rem;padding:2px 8px}
+  .avatar-remove:hover{color:#fff}
+  .today-box{text-align:left}
+  .today-box small{display:block;color:#A9C2BB;font-size:.8rem}
+  .today-box strong{font-size:1.55rem;font-weight:700;direction:ltr;display:inline-block}
+  .today-box span{font-size:.85rem;color:#A9C2BB;margin-inline-start:4px}
+
+  .panel{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius-lg);
+    padding:18px;
+    margin-top:14px;
+  }
+  .summary{margin-top:-68px}
+  .month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .month-nav h2{font-size:1rem;font-weight:600}
+  .icon-btn{
+    width:38px;height:38px;border-radius:50%;
+    border:1px solid var(--line);background:#fff;
+    display:grid;place-items:center;font-size:1.1rem;
+  }
+  .icon-btn:hover{background:var(--paper)}
+  .month-total{display:flex;align-items:baseline;gap:6px;margin:4px 0 14px}
+  .month-total strong{font-size:2rem;font-weight:700;line-height:1.1;direction:ltr}
+  .month-total span{color:var(--ink-soft)}
+  .avg{color:var(--ink-soft);font-size:.85rem;margin-top:-8px;margin-bottom:14px}
+
+  .bar{display:flex;height:18px;border-radius:99px;overflow:hidden;background:var(--paper);gap:2px}
+  .bar i{display:block;height:100%;transition:width .35s ease}
+  .legend{list-style:none;padding:0;margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:8px 18px}
+  .legend li{display:flex;align-items:center;gap:8px;font-size:.88rem}
+  .legend .dot{width:10px;height:10px;border-radius:3px;flex:none}
+  .legend .amt{margin-inline-start:auto;font-weight:600;direction:ltr}
+  .empty-note{color:var(--ink-soft);font-size:.9rem}
+
+  .budget{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+  .budget-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .budget label{font-size:.9rem;font-weight:500}
+  .budget input{
+    width:130px;border:1px solid var(--line);border-radius:var(--radius-sm);
+    padding:7px 10px;background:#fff;text-align:left;direction:ltr;
+  }
+  .meter{height:8px;border-radius:99px;background:var(--paper);margin-top:10px;overflow:hidden}
+  .meter i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .35s ease}
+  .meter.over i{background:var(--danger)}
+  .budget-msg{font-size:.85rem;margin-top:6px;color:var(--ink-soft)}
+  .budget-msg.over{color:var(--danger);font-weight:600}
+
+  /* ---------- النموذج ---------- */
+  .panel h2.title{font-size:1.05rem;font-weight:600;margin-bottom:12px}
+
+  /* ---------- الرصيد ---------- */
+  .clock{font-size:1.1rem;font-weight:600;color:#fff;font-variant-numeric:tabular-nums;margin-top:2px}
+  .item .time{font-size:.78rem;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+  .balance-row{margin-top:18px;display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+  .balance-row small{display:block;color:#A9C2BB;font-size:.85rem}
+  .balance-row strong{font-size:2.4rem;font-weight:700;line-height:1.1;direction:ltr;display:inline-block}
+  .balance-row strong.neg{color:#FFB4A9}
+  .balance-row span{color:#A9C2BB;margin-inline-start:6px}
+  .balance-hint{font-size:.82rem;color:#A9C2BB;text-align:left;max-width:45%}
+  .preview{font-size:.85rem;color:var(--ink-soft);margin-top:6px;margin-bottom:10px;min-height:1.3em}
+  .preview.neg{color:var(--danger);font-weight:600}
+  .deps{list-style:none;padding:0;margin-top:16px;border-top:1px solid var(--line);max-height:230px;overflow:auto}
+  .deps li{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line);font-size:.9rem}
+  .deps li:last-child{border-bottom:0}
+  .deps .d-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .deps .d-date{color:var(--ink-soft);font-size:.8rem}
+  .deps .d-amt{font-weight:700;color:var(--accent);direction:ltr}
+  .field{margin-bottom:14px}
+  .field > label,.field > .lbl{display:block;font-size:.88rem;font-weight:500;margin-bottom:6px}
+  .input{
+    width:100%;border:1px solid var(--line);border-radius:var(--radius-sm);
+    padding:11px 12px;background:#fff;
+  }
+  .input:focus{border-color:var(--accent)}
+  .amount-wrap{position:relative}
+  .amount-wrap .input{font-size:1.4rem;font-weight:600;padding-inline-end:70px;direction:ltr;text-align:right}
+  .amount-wrap em{
+    position:absolute;inset-inline-end:14px;top:50%;transform:translateY(-50%);
+    font-style:normal;color:var(--ink-soft);font-size:.9rem;pointer-events:none;
+  }
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{position:relative}
+  .chip input{position:absolute;opacity:0;inset:0;cursor:pointer}
+  .chip span{
+    display:flex;align-items:center;gap:7px;
+    padding:7px 13px;border:1px solid var(--line);border-radius:99px;
+    background:#fff;font-size:.9rem;
+  }
+  .chip span::before{content:"";width:9px;height:9px;border-radius:3px;background:var(--c)}
+  .chip input:checked + span{border-color:var(--c);background:var(--c);color:#fff}
+  .chip input:checked + span::before{background:#fff}
+  .chip input:focus-visible + span{outline:3px solid #F2B84B;outline-offset:2px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .btn{
+    border:0;border-radius:var(--radius-sm);padding:13px 18px;
+    background:var(--accent);color:#fff;font-weight:600;width:100%;
+  }
+  .btn:hover{background:#166a4d}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);width:auto}
+  .btn.ghost:hover{background:var(--paper)}
+  .form-actions{display:flex;gap:10px}
+  .error{color:var(--danger);font-size:.85rem;margin-top:-6px;margin-bottom:10px;min-height:1.2em}
+
+  /* ---------- القائمة ---------- */
+  .day{margin-top:18px}
+  .day-head{display:flex;justify-content:space-between;align-items:baseline;padding:0 4px 6px}
+  .day-head h3{font-size:.95rem;font-weight:600}
+  .day-head span{font-size:.88rem;color:var(--ink-soft);direction:ltr}
+  .list{list-style:none;padding:0;background:var(--card);border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden}
+  .item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .item:last-child{border-bottom:0}
+  .item .tag{width:6px;align-self:stretch;border-radius:99px;background:var(--c);flex:none}
+  .item .main{flex:1;min-width:0}
+  .item .name{font-weight:500}
+  .item .note{font-size:.84rem;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .item .price{font-weight:700;direction:ltr;white-space:nowrap}
+  .item .acts{display:flex;gap:4px}
+  .mini{
+    border:0;background:transparent;color:var(--ink-soft);
+    padding:6px 8px;border-radius:8px;font-size:.82rem;
+  }
+  .mini:hover{background:var(--paper);color:var(--ink)}
+  .mini.del:hover{color:var(--danger)}
+  .empty{
+    text-align:center;color:var(--ink-soft);padding:30px 16px;
+    border:1px dashed var(--line);border-radius:var(--radius-lg);margin-top:16px;
+  }
+  .tools{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px;justify-content:center}
+
+  /* ---------- إشعار الحذف ---------- */
+  .toast{
+    position:fixed;inset-inline:16px;bottom:18px;max-width:420px;margin-inline:auto;
+    background:var(--ink);color:#fff;border-radius:14px;padding:12px 16px;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    transform:translateY(140%);transition:transform .25s ease;z-index:10;
+  }
+  .toast.show{transform:none}
+  .toast button{background:transparent;border:0;color:#F2B84B;font-weight:600;padding:4px 8px}
+
+  @media (max-width:420px){
+    .legend{grid-template-columns:1fr}
+    .two{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-row">
+    <div>
+      <h1>أهلاً يا علي</h1>
+      <p id="dateLine"></p>
+      <p class="clock" id="clock" aria-label="الوقت الآن"></p>
+    </div>
+    <div class="avatar-box">
+      <button type="button" class="avatar" id="avatarBtn" aria-label="تغيير الصورة الشخصية">
+        <img id="avatarImg" alt="" hidden>
+        <span id="avatarInitial">ع</span>
+      </button>
+      <input type="file" id="avatarFile" accept="image/*" hidden>
+      <button type="button" class="avatar-remove" id="avatarRemove" hidden>إزالة الصورة</button>
+    </div>
+    <div class="today-box">
+      <small>مصروف اليوم</small>
+      <strong id="todayTotal">0</strong><span>د.ل</span>
+    </div>
+  </div>
+  <div class="wrap balance-row">
+    <div>
+      <small>الرصيد الحالي</small>
+      <strong id="balance">0</strong><span>د.ل</span>
+    </div>
+    <div class="balance-hint" id="balanceHint"></div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ملخص الشهر -->
+  <section class="panel summary" aria-labelledby="monthTitle">
+    <div class="month-nav">
+      <button class="icon-btn" id="nextMonth" aria-label="الشهر التالي">‹</button>
+      <h2 id="monthTitle"></h2>
+      <button class="icon-btn" id="prevMonth" aria-label="الشهر السابق">›</button>
+    </div>
+    <div class="month-total"><strong id="monthTotal">0</strong><span>دينار ليبي</span></div>
+    <div class="avg" id="avgLine"></div>
+    <div class="bar" id="bar" role="img" aria-label="توزيع المصروفات حسب الفئة"></div>
+    <ul class="legend" id="legend"></ul>
+
+    <div class="budget">
+      <div class="budget-row">
+        <label for="budgetInput">الميزانية الشهرية</label>
+        <input id="budgetInput" type="number" inputmode="decimal" min="0" step="any" placeholder="اختياري">
+      </div>
+      <div class="meter" id="meter" hidden><i id="meterFill"></i></div>
+      <div class="budget-msg" id="budgetMsg"></div>
+    </div>
+  </section>
+
+  <!-- إضافة رصيد -->
+  <section class="panel" aria-labelledby="depTitle">
+    <h2 class="title" id="depTitle">إضافة رصيد</h2>
+    <form id="depForm" novalidate>
+      <div class="two">
+        <div class="field">
+          <label for="depAmount">المبلغ</label>
+          <input class="input" id="depAmount" type="number" inputmode="decimal" min="0" step="any" placeholder="0" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="depNote">ملاحظة</label>
+          <input class="input" id="depNote" type="text" maxlength="80" placeholder="مثال: رصيد حالي، إيراد…" autocomplete="off">
+        </div>
+      </div>
+      <div class="preview" id="depPreview" role="status"></div>
+      <button class="btn" type="submit">إضافة إلى الرصيد</button>
+    </form>
+    <ul class="deps" id="deps"></ul>
+  </section>
+
+  <!-- إضافة / تعديل مصروف -->
+  <section class="panel" aria-labelledby="formTitle">
+    <h2 class="title" id="formTitle">إضافة مصروف</h2>
+    <form id="form" novalidate>
+      <div class="field">
+        <label for="amount">المبلغ</label>
+        <div class="amount-wrap">
+          <input class="input" id="amount" type="number" inputmode="decimal" min="0" step="any" placeholder="0" autocomplete="off">
+          <em>د.ل</em>
+        </div>
+        <div class="preview" id="expPreview"></div>
+      </div>
+      <div class="field">
+        <span class="lbl" id="catLbl">الفئة</span>
+        <div class="chips" id="chips" role="radiogroup" aria-labelledby="catLbl"></div>
+      </div>
+      <div class="two">
+        <div class="field">
+          <label for="note">ملاحظة</label>
+          <input class="input" id="note" type="text" maxlength="80" placeholder="مثال: غداء، بنزين…" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="date">التاريخ</label>
+          <input class="input" id="date" type="date">
+        </div>
+      </div>
+      <div class="error" id="error" role="alert"></div>
+      <div class="form-actions">
+        <button class="btn" type="submit" id="submitBtn">إضافة المصروف</button>
+        <button class="btn ghost" type="button" id="cancelBtn" hidden>إلغاء</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- السجل -->
+  <section aria-label="سجل المصروفات" id="history"></section>
+
+  <div class="tools">
+    <button class="btn ghost" id="exportBtn" type="button">تصدير الشهر (CSV)</button>
+    <button class="btn ghost" id="clearBtn" type="button">حذف مصروفات الشهر</button>
+  </div>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <span id="toastMsg"></span>
+  <button id="toastUndo" type="button">تراجع</button>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const KEY = "masroufati-v1";
+  const CATS = [
+    {id:"food",      name:"طعام",     color:"#D9822B"},
+    {id:"transport", name:"مواصلات",  color:"#2F6F9F"},
+    {id:"bills",     name:"فواتير",   color:"#6B5CA5"},
+    {id:"shopping",  name:"تسوق",     color:"#B5476B"},
+    {id:"health",    name:"صحة",      color:"#1F9E89"},
+    {id:"edu",       name:"تعليم",    color:"#7A8B2E"},
+    {id:"fun",       name:"ترفيه",    color:"#D1495B"},
+    {id:"other",     name:"أخرى",     color:"#7B8794"}
+  ];
+  const catById = id => CATS.find(c => c.id === id) || CATS[CATS.length-1];
+
+  /* ---------- التخزين (مع بديل في الذاكرة إن تعذّر) ---------- */
+  let memBackup = null;
+  function load(){
+    try{
+      const raw = localStorage.getItem(KEY);
+      if(raw){
+        const d = JSON.parse(raw);
+        if(d && Array.isArray(d.items)){
+          if(!Array.isArray(d.deposits)) d.deposits = [];
+          return d;
+        }
+      }
+    }catch(e){ if(memBackup) return memBackup; }
+    return {items:[], deposits:[], budget:0};
+  }
+  function save(){
+    try{ localStorage.setItem(KEY, JSON.stringify(state)); }
+    catch(e){ memBackup = JSON.parse(JSON.stringify(state)); }
+  }
+
+  /* ---------- أدوات ---------- */
+  const nf = new Intl.NumberFormat("en-US",{maximumFractionDigits:3});
+  const fmt = n => nf.format(n);
+  const pad = n => String(n).padStart(2,"0");
+  const toISO = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  const todayISO = () => toISO(new Date());
+  const monthOf = iso => iso.slice(0,7);
+  const parseISO = iso => { const [y,m,d] = iso.split("-").map(Number); return new Date(y,m-1,d); };
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const LOC = "ar-LY-u-nu-latn";
+  const $ = id => document.getElementById(id);
+  const sum = arr => arr.reduce((s,i)=>s+i.amount,0);
+  const r3 = n => Math.round(n*1000)/1000;
+  const fmtTime = ts => new Date(ts).toLocaleTimeString(LOC,{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:true});
+  const hms = ts => { const d = new Date(ts); return pad(d.getHours())+":"+pad(d.getMinutes())+":"+pad(d.getSeconds()); };
+  const balance = () => r3(sum(state.deposits) - sum(state.items));
+
+  /* ---------- الحالة ---------- */
+  const state = load();
+  let viewMonth = monthOf(todayISO());
+  let editingId = null;
+  let selectedCat = CATS[0].id;
+  let lastDeleted = null;
+  let lastDepDeleted = null;
+  let toastTimer = null;
+
+  /* ---------- بناء أزرار الفئات ---------- */
+  function buildChips(){
+    $("chips").innerHTML = CATS.map(c =>
+      `<label class="chip" style="--c:${c.color}">
+         <input type="radio" name="cat" value="${c.id}" ${c.id===selectedCat?"checked":""}>
+         <span>${c.name}</span>
+       </label>`).join("");
+  }
+  $("chips").addEventListener("change", e => {
+    if(e.target.name === "cat") selectedCat = e.target.value;
+  });
+
+  /* ---------- العرض ---------- */
+  function monthItems(){
+    return state.items.filter(i => monthOf(i.date) === viewMonth);
+  }
+
+  function renderHeader(){
+    $("dateLine").textContent = new Date().toLocaleDateString(LOC,{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+    const t = todayISO();
+    const total = state.items.filter(i => i.date === t).reduce((s,i)=>s+i.amount,0);
+    $("todayTotal").textContent = fmt(total);
+
+    const bal = balance();
+    const bEl = $("balance");
+    bEl.textContent = fmt(bal);
+    bEl.classList.toggle("neg", bal < 0);
+    $("balanceHint").textContent = state.deposits.length
+      ? "إجمالي المضاف: " + fmt(r3(sum(state.deposits))) + " د.ل"
+      : "أضف رصيدك الحالي من خانة «إضافة رصيد».";
+  }
+
+  function renderSummary(){
+    const [y,m] = viewMonth.split("-").map(Number);
+    $("monthTitle").textContent = new Date(y,m-1,1).toLocaleDateString(LOC,{month:"long",year:"numeric"});
+
+    const items = monthItems();
+    const total = items.reduce((s,i)=>s+i.amount,0);
+    $("monthTotal").textContent = fmt(total);
+
+    // المتوسط اليومي
+    const now = new Date();
+    const isCurrent = viewMonth === monthOf(todayISO());
+    const days = isCurrent ? now.getDate() : new Date(y,m,0).getDate();
+    $("avgLine").textContent = total > 0 ? "المتوسط اليومي: " + fmt(Math.round(total/days*1000)/1000) + " د.ل" : "";
+
+    // التوزيع حسب الفئة
+    const byCat = {};
+    items.forEach(i => byCat[i.cat] = (byCat[i.cat]||0) + i.amount);
+    const rows = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+
+    if(!rows.length){
+      $("bar").innerHTML = "";
+      $("legend").innerHTML = `<li class="empty-note" style="grid-column:1/-1">لا توجد مصروفات في هذا الشهر بعد.</li>`;
+    }else{
+      $("bar").innerHTML = rows.map(([id,v]) =>
+        `<i style="width:${(v/total*100).toFixed(2)}%;background:${catById(id).color}" title="${catById(id).name}"></i>`).join("");
+      $("legend").innerHTML = rows.map(([id,v]) =>
+        `<li><span class="dot" style="background:${catById(id).color}"></span>${catById(id).name}<span class="amt">${fmt(v)}</span></li>`).join("");
+    }
+
+    // الميزانية
+    const b = Number(state.budget)||0;
+    const meter = $("meter");
+    if(b > 0){
+      const pct = Math.min(100, total/b*100);
+      meter.hidden = false;
+      $("meterFill").style.width = pct + "%";
+      const over = total > b;
+      meter.classList.toggle("over", over);
+      $("budgetMsg").classList.toggle("over", over);
+      $("budgetMsg").textContent = over
+        ? "تجاوزت الميزانية بمقدار " + fmt(total-b) + " د.ل"
+        : "المتبقي من الميزانية: " + fmt(b-total) + " د.ل";
+    }else{
+      meter.hidden = true;
+      $("budgetMsg").classList.remove("over");
+      $("budgetMsg").textContent = "";
+    }
+  }
+
+  function dayLabel(iso){
+    const t = todayISO();
+    const y = new Date(); y.setDate(y.getDate()-1);
+    if(iso === t) return "اليوم";
+    if(iso === toISO(y)) return "أمس";
+    return parseISO(iso).toLocaleDateString(LOC,{weekday:"long",day:"numeric",month:"long"});
+  }
+
+  function renderHistory(){
+    const items = monthItems().sort((a,b)=> a.date===b.date ? b.id-a.id : (a.date<b.date?1:-1));
+    const box = $("history");
+    if(!items.length){
+      box.innerHTML = `<div class="empty">لا توجد مصروفات مسجّلة. أضف أول مصروف من النموذج أعلاه.</div>`;
+      return;
+    }
+    const groups = {};
+    items.forEach(i => (groups[i.date] = groups[i.date] || []).push(i));
+    box.innerHTML = Object.keys(groups).sort().reverse().map(d => {
+      const sum = groups[d].reduce((s,i)=>s+i.amount,0);
+      return `<div class="day">
+        <div class="day-head"><h3>${dayLabel(d)}</h3><span>${fmt(sum)} د.ل</span></div>
+        <ul class="list">${groups[d].map(i => {
+          const c = catById(i.cat);
+          return `<li class="item" style="--c:${c.color}">
+            <span class="tag"></span>
+            <div class="main">
+              <div class="name">${c.name}</div>
+              ${i.note ? `<div class="note">${esc(i.note)}</div>` : ""}
+              <div class="time">${fmtTime(i.id)}</div>
+            </div>
+            <div class="price">${fmt(i.amount)}</div>
+            <div class="acts">
+              <button class="mini" data-act="edit" data-id="${i.id}" aria-label="تعديل المصروف">تعديل</button>
+              <button class="mini del" data-act="del" data-id="${i.id}" aria-label="حذف المصروف">حذف</button>
+            </div>
+          </li>`;
+        }).join("")}</ul>
+      </div>`;
+    }).join("");
+  }
+
+  function renderDeposits(){
+    const list = state.deposits.slice().sort((a,b)=>b.id-a.id);
+    $("deps").innerHTML = list.map(d =>
+      `<li>
+         <span class="d-name">${d.note ? esc(d.note) : "إضافة رصيد"}</span>
+         <span class="d-date">${dayLabel(d.date)} ${fmtTime(d.id)}</span>
+         <span class="d-amt">+${fmt(d.amount)}</span>
+         <button class="mini del" data-dep="${d.id}" aria-label="حذف الإضافة">حذف</button>
+       </li>`).join("");
+    $("deps").hidden = !list.length;
+  }
+
+  function updateExpPreview(){
+    const el = $("expPreview");
+    const a = parseFloat($("amount").value);
+    if(!(a > 0)){ el.textContent = ""; el.classList.remove("neg"); return; }
+    let old = 0;
+    if(editingId !== null){
+      const it = state.items.find(i => i.id === editingId);
+      if(it) old = it.amount;
+    }
+    const after = r3(balance() + old - a);
+    el.textContent = "الرصيد بعد هذا المصروف: " + fmt(after) + " د.ل";
+    el.classList.toggle("neg", after < 0);
+  }
+
+  function updateDepPreview(){
+    const el = $("depPreview");
+    const a = parseFloat($("depAmount").value);
+    el.classList.remove("neg");
+    if(!(a > 0)){ el.textContent = ""; return; }
+    el.textContent = "الرصيد بعد الإضافة: " + fmt(r3(balance() + a)) + " د.ل";
+  }
+
+  function render(){
+    renderHeader();
+    renderSummary();
+    renderDeposits();
+    renderHistory();
+    updateExpPreview();
+    updateDepPreview();
+  }
+
+  $("amount").addEventListener("input", updateExpPreview);
+  $("depAmount").addEventListener("input", updateDepPreview);
+
+  /* ---------- النموذج ---------- */
+  function resetForm(){
+    editingId = null;
+    $("amount").value = "";
+    $("note").value = "";
+    $("date").value = todayISO();
+    $("error").textContent = "";
+    $("formTitle").textContent = "إضافة مصروف";
+    $("submitBtn").textContent = "إضافة المصروف";
+    $("cancelBtn").hidden = true;
+    updateExpPreview();
+  }
+
+  $("form").addEventListener("submit", e => {
+    e.preventDefault();
+    const amount = parseFloat($("amount").value);
+    const date = $("date").value;
+    if(!(amount > 0)){ $("error").textContent = "أدخل مبلغاً أكبر من صفر."; $("amount").focus(); return; }
+    if(!date){ $("error").textContent = "اختر تاريخ المصروف."; $("date").focus(); return; }
+    const note = $("note").value.trim();
+
+    if(editingId !== null){
+      const it = state.items.find(i => i.id === editingId);
+      if(it){ it.amount = amount; it.cat = selectedCat; it.note = note; it.date = date; }
+    }else{
+      state.items.push({id: Date.now(), amount, cat: selectedCat, note, date});
+    }
+    save();
+    viewMonth = monthOf(date);
+    resetForm();
+    render();
+    $("amount").focus();
+  });
+
+  $("cancelBtn").addEventListener("click", resetForm);
+
+  /* ---------- أزرار السجل ---------- */
+  $("history").addEventListener("click", e => {
+    const btn = e.target.closest("button[data-act]");
+    if(!btn) return;
+    const id = Number(btn.dataset.id);
+    const it = state.items.find(i => i.id === id);
+    if(!it) return;
+
+    if(btn.dataset.act === "edit"){
+      editingId = id;
+      selectedCat = it.cat;
+      buildChips();
+      $("amount").value = it.amount;
+      updateExpPreview();
+      $("note").value = it.note || "";
+      $("date").value = it.date;
+      $("error").textContent = "";
+      $("formTitle").textContent = "تعديل المصروف";
+      $("submitBtn").textContent = "حفظ التعديل";
+      $("cancelBtn").hidden = false;
+      $("formTitle").scrollIntoView({behavior:"smooth",block:"center"});
+      $("amount").focus({preventScroll:true});
+    }else{
+      state.items = state.items.filter(i => i.id !== id);
+      save();
+      if(editingId === id) resetForm();
+      lastDeleted = [it];
+      lastDepDeleted = null;
+      showToast("تم حذف المصروف");
+      render();
+    }
+  });
+
+  /* ---------- التراجع ---------- */
+  function showToast(msg){
+    $("toastMsg").textContent = msg;
+    $("toast").classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideToast, 6000);
+  }
+  function hideToast(){ $("toast").classList.remove("show"); lastDeleted = null; lastDepDeleted = null; }
+  $("toastUndo").addEventListener("click", () => {
+    if(lastDepDeleted){
+      state.deposits.push(lastDepDeleted);
+      save();
+      lastDepDeleted = null;
+      render();
+    }
+    if(lastDeleted){
+      state.items.push(...lastDeleted);
+      save();
+      lastDeleted = null;
+      render();
+    }
+    clearTimeout(toastTimer);
+    $("toast").classList.remove("show");
+  });
+
+  /* ---------- إضافة رصيد ---------- */
+  $("depForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const a = parseFloat($("depAmount").value);
+    if(!(a > 0)){
+      $("depPreview").textContent = "أدخل مبلغاً أكبر من صفر.";
+      $("depPreview").classList.add("neg");
+      $("depAmount").focus();
+      return;
+    }
+    state.deposits.push({id: Date.now(), amount: a, note: $("depNote").value.trim(), date: todayISO()});
+    save();
+    $("depAmount").value = "";
+    $("depNote").value = "";
+    render();
+  });
+
+  $("deps").addEventListener("click", e => {
+    const btn = e.target.closest("button[data-dep]");
+    if(!btn) return;
+    const id = Number(btn.dataset.dep);
+    const d = state.deposits.find(x => x.id === id);
+    if(!d) return;
+    state.deposits = state.deposits.filter(x => x.id !== id);
+    save();
+    lastDeleted = null;
+    lastDepDeleted = d;
+    showToast("تم حذف الإضافة");
+    render();
+  });
+
+  /* ---------- التنقل بين الأشهر ---------- */
+  function shiftMonth(delta){
+    const [y,m] = viewMonth.split("-").map(Number);
+    const d = new Date(y, m-1+delta, 1);
+    viewMonth = d.getFullYear()+"-"+pad(d.getMonth()+1);
+    render();
+  }
+  $("prevMonth").addEventListener("click", () => shiftMonth(-1));
+  $("nextMonth").addEventListener("click", () => shiftMonth(1));
+
+  /* ---------- الميزانية ---------- */
+  $("budgetInput").addEventListener("input", e => {
+    state.budget = Math.max(0, parseFloat(e.target.value) || 0);
+    save();
+    renderSummary();
+  });
+
+  /* ---------- تصدير CSV ---------- */
+  $("exportBtn").addEventListener("click", () => {
+    const items = monthItems().sort((a,b)=> a.date<b.date?-1:1);
+    if(!items.length){ showToast("لا توجد بيانات لتصديرها"); lastDeleted = null; return; }
+    const q = s => '"' + String(s).replace(/"/g,'""') + '"';
+    const lines = ["التاريخ,وقت التسجيل,الفئة,المبلغ (د.ل),الملاحظة"]
+      .concat(items.map(i => [i.date, hms(i.id), q(catById(i.cat).name), i.amount, q(i.note||"")].join(",")));
+    const blob = new Blob(["\uFEFF"+lines.join("\n")], {type:"text/csv;charset=utf-8"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "masroufat-" + viewMonth + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+
+  /* ---------- حذف مصروفات الشهر (مع إمكانية التراجع) ---------- */
+  $("clearBtn").addEventListener("click", () => {
+    const items = monthItems();
+    if(!items.length) return;
+    if(!confirm("سيتم حذف جميع مصروفات هذا الشهر (" + items.length + "). هل أنت متأكد؟")) return;
+    state.items = state.items.filter(i => monthOf(i.date) !== viewMonth);
+    save();
+    lastDeleted = items;
+    lastDepDeleted = null;
+    showToast("تم حذف مصروفات الشهر");
+    render();
+  });
+
+  /* ---------- الساعة الحية ---------- */
+  let lastDay = todayISO();
+  function tick(){
+    $("clock").textContent = fmtTime(Date.now());
+    const t = todayISO();
+    if(t !== lastDay){ lastDay = t; render(); }
+  }
+  tick();
+  setInterval(tick, 1000);
+
+  /* ---------- الصورة الشخصية ---------- */
+  function renderAvatar(){
+    const has = !!state.avatar;
+    if(has) $("avatarImg").src = state.avatar;
+    $("avatarImg").hidden = !has;
+    $("avatarInitial").hidden = has;
+    $("avatarRemove").hidden = !has;
+  }
+  $("avatarBtn").addEventListener("click", () => $("avatarFile").click());
+  $("avatarFile").addEventListener("change", e => {
+    const f = e.target.files[0];
+    if(!f) return;
+    const url = URL.createObjectURL(f);
+    const img = new Image();
+    img.onload = () => {
+      const S = 240;
+      const c = document.createElement("canvas");
+      c.width = c.height = S;
+      const m = Math.min(img.width, img.height);
+      c.getContext("2d").drawImage(img, (img.width-m)/2, (img.height-m)/2, m, m, 0, 0, S, S);
+      state.avatar = c.toDataURL("image/jpeg", 0.85);
+      save();
+      renderAvatar();
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = () => URL.revokeObjectURL(url);
+    img.src = url;
+    e.target.value = "";
+  });
+  $("avatarRemove").addEventListener("click", () => {
+    delete state.avatar;
+    save();
+    renderAvatar();
+  });
+  renderAvatar();
+
+  /* ---------- البداية ---------- */
+  buildChips();
+  $("budgetInput").value = state.budget > 0 ? state.budget : "";
+  resetForm();
+  render();
+})();
+</script>
+</body>
+</html>
